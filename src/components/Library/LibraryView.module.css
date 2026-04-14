@@ -1,0 +1,101 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.container {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  color: #333;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.closeButton {
+  width: 32px;
+  height: 32px;
+  font-size: 1.2rem;
+  background: #eee;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.closeButton:hover {
+  background: #ddd;
+}
+
+.empty {
+  text-align: center;
+  color: #777;
+  padding: 40px 0;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.itemInfo {
+  flex: 1;
+  cursor: pointer;
+}
+
+.itemName {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.itemNotes {
+  font-size: 0.85rem;
+  color: #777;
+}
+
+.deleteButton {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.deleteButton:hover {
+  opacity: 0.7;
+}

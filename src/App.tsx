@@ -1,9 +1,13 @@
 import { useState, useCallback, useEffect } from 'react';
 import NoteInput from './components/input/NoteTextInput';
 import FingeringDisplay from './components/FingeringDisplay';
+import GoogleSignIn from './components/Auth/GoogleSignIn';
+import LibraryView from './components/Library/LibraryView';
+import SaveMelodyButton from './components/Library/SaveMelodyButton';
 import { getNoteData } from './data/fingerings';
 import { useAudio } from './hooks/useAudio';
 import type { Fingering } from './types';
+import type { User } from 'firebase/auth';
 import styles from './App.module.css';
 
 interface NoteWithFingering {
@@ -14,8 +18,11 @@ interface NoteWithFingering {
 
 function App() {
   const [melody, setMelody] = useState<NoteWithFingering[]>([]);
+  const [melodyName, setMelodyName] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
-  const { playNote } = useAudio();
+  const [user, setUser] = useState<User | null>(null);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const { playNote, playMelody } = useAudio();
 
   const handleNotesSubmit = useCallback((notes: string[]) => {
     const notesWithData: NoteWithFingering[] = [];
@@ -26,8 +33,15 @@ function App() {
       }
     }
     setMelody(notesWithData);
+    setMelodyName(notes.join(' '));
     setCurrentIndex(0);
   }, []);
+
+  const handleSelectMelody = useCallback((notes: string[], name: string) => {
+    handleNotesSubmit(notes);
+    setMelodyName(name);
+    setShowLibrary(false);
+  }, [handleNotesSubmit]);
 
   const handlePrev = useCallback(() => {
     setCurrentIndex(prev => Math.max(0, prev - 1));
@@ -60,6 +74,7 @@ function App() {
 
   const handleBackToInput = useCallback(() => {
     setMelody([]);
+    setMelodyName('');
     setCurrentIndex(0);
   }, []);
 
@@ -67,11 +82,14 @@ function App() {
     <div className={styles.app}>
       <header className={styles.header}>
         <h1>Recorder Fingering</h1>
-        {melody.length > 0 && (
-          <button onClick={handleBackToInput} className={styles.backButton}>
-            ← New Melody
-          </button>
-        )}
+        <div className={styles.headerActions}>
+          {user && (
+            <button onClick={() => setShowLibrary(true)} className={styles.libraryButton}>
+              📚 Library
+            </button>
+          )}
+          <GoogleSignIn onUserChange={setUser} />
+        </div>
       </header>
 
       {melody.length === 0 ? (
@@ -90,7 +108,7 @@ function App() {
 
       {melody.length > 0 && (
         <div className={styles.melodySummary}>
-          <h3>Melody:</h3>
+          <h3>{melodyName || 'Melody'}:</h3>
           <div className={styles.noteChips}>
             {melody.map((n, i) => (
               <span
@@ -102,14 +120,24 @@ function App() {
               </span>
             ))}
           </div>
-          <button onClick={() => {
-            melody.forEach((n, i) => {
-              setTimeout(() => playNote(n.frequency, 0.8), i * 1000);
-            });
-          }} className={styles.playAllButton}>
-            ▶ Play All
+          <div className={styles.actions}>
+            <button onClick={() => playMelody(melody.map(n => n.frequency), 0.8, 0.2)} className={styles.playAllButton}>
+              ▶ Play All
+            </button>
+            {user && <SaveMelodyButton user={user} notes={melody.map(n => n.note)} />}
+          </div>
+          <button onClick={handleBackToInput} className={styles.backButton}>
+            ← New Melody
           </button>
         </div>
+      )}
+
+      {showLibrary && user && (
+        <LibraryView
+          user={user}
+          onSelectMelody={handleSelectMelody}
+          onClose={() => setShowLibrary(false)}
+        />
       )}
     </div>
   );

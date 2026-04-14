@@ -19,6 +19,26 @@
   font-weight: 600;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.libraryButton {
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.libraryButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 .backButton {
   padding: 8px 16px;
   font-size: 0.9rem;
@@ -68,6 +88,13 @@
 .chip.active {
   background: #4a90d9;
   color: #fff;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
 }
 
 .playAllButton {
