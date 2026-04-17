@@ -1,4 +1,4 @@
-import type { Fingering } from '../types';
+import type { Fingering, FingeringState, DoubleState } from '../types';
 import styles from './RecorderDiagram.module.css';
 
 interface RecorderDiagramProps {
@@ -6,98 +6,83 @@ interface RecorderDiagramProps {
   label?: string;
 }
 
+const STROKE = '#222';
+
+const stateFill = (state: FingeringState) => {
+  if (state === 'closed') return '#222';
+  if (state === 'half') return '#999';
+  return 'white';
+};
+
+const doubleFill = (state: DoubleState, side: 'left' | 'right') => {
+  if (state === 2) return '#222';
+  if (state === 1 && side === 'left') return '#222';
+  return 'white';
+};
+
 export default function RecorderDiagram({ fingering, label }: RecorderDiagramProps) {
+  const cx = 20;
+  const bx1 = 18;
+  const bx2 = 22;
+
+  const rNormal = 5;
+  const rThumb = 3.5;
+  const rDouble = 3.5;
+  const dOffset = 4.5;
+
+  const thumbY = 11;
+  const leftY = [28, 43, 58];
+  const rightY = [78, 93];
+  const doubleY = [114, 130];
+
+  const div = (y: number) => (
+    <line x1="12" y1={y} x2="28" y2={y} stroke={STROKE} strokeWidth="1" />
+  );
+
   return (
     <div className={styles.container}>
-      {label && <div className={styles.label}>{label}</div>}
-      <svg viewBox="0 0 120 280" className={styles.svg}>
-        {/* Recorder body */}
-        <rect x="35" y="10" width="50" height="260" rx="8" fill="#e8d5b7" stroke="#8b6914" strokeWidth="2" />
-        
-        {/* Mouthpiece */}
-        <rect x="40" y="0" width="40" height="15" rx="3" fill="#c9a96e" stroke="#8b6914" strokeWidth="1" />
+      {label && <span className={styles.label}>{label}</span>}
+      <svg viewBox="0 0 40 148" className={styles.svg}>
+        {/* Body */}
+        <line x1={bx1} y1="0" x2={bx1} y2="146" stroke={STROKE} strokeWidth="1.2" />
+        <line x1={bx2} y1="0" x2={bx2} y2="146" stroke={STROKE} strokeWidth="1.2" />
 
-        {/* Thumb hole (back) */}
-        <circle
-          cx="60"
-          cy="30"
-          r="10"
-          fill={fingering.thumb ? '#2c2c2c' : '#f5e6d0'}
-          stroke="#8b6914"
-          strokeWidth="1.5"
-        />
+        {/* Thumb hole (back, smaller) */}
+        <circle cx={cx} cy={thumbY} r={rThumb}
+                fill={stateFill(fingering.thumb)}
+                stroke={STROKE} strokeWidth="1.2" />
 
-        {/* Left hand holes */}
-        <circle
-          cx="60"
-          cy="70"
-          r="10"
-          fill={fingering.leftHand[0] ? '#2c2c2c' : '#f5e6d0'}
-          stroke="#8b6914"
-          strokeWidth="1.5"
-        />
-        <circle
-          cx="60"
-          cy="105"
-          r="10"
-          fill={fingering.leftHand[1] ? '#2c2c2c' : '#f5e6d0'}
-          stroke="#8b6914"
-          strokeWidth="1.5"
-        />
-        <circle
-          cx="60"
-          cy="140"
-          r="10"
-          fill={fingering.leftHand[2] ? '#2c2c2c' : '#f5e6d0'}
-          stroke="#8b6914"
-          strokeWidth="1.5"
-        />
+        {div(19)}
 
-        {/* Right hand holes */}
-        <circle
-          cx="60"
-          cy="180"
-          r="10"
-          fill={fingering.rightHand[0] ? '#2c2c2c' : '#f5e6d0'}
-          stroke="#8b6914"
-          strokeWidth="1.5"
-        />
-        <circle
-          cx="60"
-          cy="215"
-          r="10"
-          fill={fingering.rightHand[1] ? '#2c2c2c' : '#f5e6d0'}
-          stroke="#8b6914"
-          strokeWidth="1.5"
-        />
-        <circle
-          cx="60"
-          cy="250"
-          r="10"
-          fill={fingering.rightHand[2] ? '#2c2c2c' : '#f5e6d0'}
-          stroke="#8b6914"
-          strokeWidth="1.5"
-        />
+        {/* Left hand L1–L3 */}
+        {fingering.leftHand.map((state, i) => (
+          <circle key={`l${i}`} cx={cx} cy={leftY[i]} r={rNormal}
+                  fill={stateFill(state)}
+                  stroke={STROKE} strokeWidth="1.2" />
+        ))}
 
-        {/* Finger labels on left side */}
-        <text x="20" y="33" fontSize="10" fill="#555">L0</text>
-        <text x="20" y="73" fontSize="10" fill="#555">L1</text>
-        <text x="20" y="108" fontSize="10" fill="#555">L2</text>
-        <text x="20" y="143" fontSize="10" fill="#555">L3</text>
-        <text x="20" y="183" fontSize="10" fill="#555">R1</text>
-        <text x="20" y="218" fontSize="10" fill="#555">R2</text>
-        <text x="20" y="253" fontSize="10" fill="#555">R3</text>
+        {div(67)}
 
-        {/* Pinky hole (extra bottom) */}
-        <circle
-          cx="60"
-          cy="265"
-          r="6"
-          fill={fingering.rightHand[3] ? '#2c2c2c' : '#f5e6d0'}
-          stroke="#8b6914"
-          strokeWidth="1.5"
-        />
-        <text x="20" y="268" fontSize="8" fill="#555">R4</text>
+        {/* Right hand R1–R2 */}
+        {(fingering.rightHand.slice(0, 2) as FingeringState[]).map((state, i) => (
+          <circle key={`r${i}`} cx={cx} cy={rightY[i]} r={rNormal}
+                  fill={stateFill(state)}
+                  stroke={STROKE} strokeWidth="1.2" />
+        ))}
+
+        {div(103)}
+
+        {/* R3, R4 — double holes side by side */}
+        {(fingering.rightHand.slice(2) as DoubleState[]).map((state, i) => (
+          <g key={`d${i}`}>
+            <circle cx={cx - dOffset} cy={doubleY[i]} r={rDouble}
+                    fill={doubleFill(state, 'left')}
+                    stroke={STROKE} strokeWidth="1.2" />
+            <circle cx={cx + dOffset} cy={doubleY[i]} r={rDouble}
+                    fill={doubleFill(state, 'right')}
+                    stroke={STROKE} strokeWidth="1.2" />
+          </g>
+        ))}
       </svg>
     </div>
   );

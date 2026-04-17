@@ -14,12 +14,22 @@ export default function NoteInput({ onSubmit, recorderType }: NoteInputProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const notes = input
-      .trim()
-      .split(/\s+/)
-      .map(n => n.replace(/[',]/g, ''))
-      .filter(n => availableNotes.includes(n));
-    
+    // Remove spaces, commas, apostrophes
+    const cleaned = input.replace(/[\s,']+/g, '');
+    // Parse notes: letter + optional sharp + optional octave digit
+    const regex = /([A-Ga-g])(#?)(\d?)/g;
+    const notes: string[] = [];
+    let match;
+    while ((match = regex.exec(cleaned)) !== null) {
+      const letter = match[1].toUpperCase();
+      const sharp = match[2];
+      const octave = match[3] || '5';
+      const note = `${letter}${sharp}${octave}`;
+      if (availableNotes.includes(note)) {
+        notes.push(note);
+      }
+    }
+
     if (notes.length > 0) {
       onSubmit(notes);
       setInput('');
@@ -34,7 +44,7 @@ export default function NoteInput({ onSubmit, recorderType }: NoteInputProps) {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="e.g., G4 A4 B4 C5 D5"
+          placeholder="e.g., GABCDE, gabcde, G#AC5D"
           className={styles.input}
         />
         <button type="submit" className={styles.button}>
@@ -42,7 +52,7 @@ export default function NoteInput({ onSubmit, recorderType }: NoteInputProps) {
         </button>
       </div>
       <div className={styles.noteList}>
-        <p>Available notes: {availableNotes.join(', ')}</p>
+        <p>Available notes: {availableNotes.map(n => n.replace(/\d/, '')).join(', ')}</p>
       </div>
     </form>
   );

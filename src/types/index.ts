@@ -1,8 +1,11 @@
 export interface Fingering {
-  thumb: boolean;       // Back hole (left thumb)
-  leftHand: [boolean, boolean, boolean];  // [index, middle, ring]
-  rightHand: [boolean, boolean, boolean, boolean]; // [index, middle, ring, pinky]
+  thumb: FingeringState; // Back hole (left thumb), 'half' = pinched for 2nd octave
+  leftHand: [FingeringState, FingeringState, FingeringState];  // [index, middle, ring]
+  rightHand: [FingeringState, FingeringState, DoubleState, DoubleState]; // [index, middle, ring-double, pinky-double]
 }
+
+export type FingeringState = 'closed' | 'half' | 'open';
+export type DoubleState = 0 | 1 | 2; // holes covered in double-hole pair
 
 export interface NoteData {
   note: string;
