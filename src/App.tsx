@@ -17,49 +17,45 @@ interface NoteWithFingering {
 }
 
 function App() {
-  const [melody, setMelody] = useState<NoteWithFingering[]>([]);
+  const [melody, setMelody] = useState<NoteWithFingering[][]>([]);
   const [melodyName, setMelodyName] = useState('');
   const [user, setUser] = useState<User | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
   const { playNote, playMelody } = useAudio();
 
-  const handleNotesSubmit = useCallback((notes: string[]) => {
-    const notesWithData: NoteWithFingering[] = [];
-    for (const note of notes) {
-      const data = getNoteData('germanG', note);
-      if (data) {
-        notesWithData.push({ note, fingering: data.fingering, frequency: data.frequency });
+  const handleNotesSubmit = useCallback((rows: string[][]) => {
+    const melodyRows: NoteWithFingering[][] = [];
+    for (const row of rows) {
+      const rowNotes: NoteWithFingering[] = [];
+      for (const note of row) {
+        const data = getNoteData('germanG', note);
+        if (data) rowNotes.push({ note, fingering: data.fingering, frequency: data.frequency });
       }
+      if (rowNotes.length > 0) melodyRows.push(rowNotes);
     }
-    setMelody(notesWithData);
-    setMelodyName(notes.join(' '));
+    setMelody(melodyRows);
+    setMelodyName(rows.flat().join(' '));
   }, []);
 
   const handleSelectMelody = useCallback((notes: string[], name: string) => {
-    handleNotesSubmit(notes);
+    handleNotesSubmit([notes]);
     setMelodyName(name);
     setShowLibrary(false);
   }, [handleNotesSubmit]);
 
-  // Keyboard navigation
+  const flatMelody = melody.flat();
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (melody.length === 0) return;
+      if (flatMelody.length === 0) return;
       if (e.key === ' ') {
         e.preventDefault();
-        // Play first note or cycle
-        const idx = melody.findIndex((_, i) => i === 0);
-        if (idx !== -1) playNote(melody[0].frequency, 1.2);
+        playNote(flatMelody[0].frequency, 1.2);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [melody, playNote]);
-
-  const handleBackToInput = useCallback(() => {
-    setMelody([]);
-    setMelodyName('');
-  }, []);
+  }, [flatMelody, playNote]);
 
   return (
     <div className={styles.app}>
@@ -75,26 +71,27 @@ function App() {
         </div>
       </header>
 
-      {melody.length === 0 ? (
-        <NoteInput onSubmit={handleNotesSubmit} recorderType="germanG" />
-      ) : (
-        <MelodyView melody={melody} onPlayNote={(freq) => playNote(freq, 1.2)} />
-      )}
+      <div className={styles.main}>
+        {melody.length > 0 ? (
+          <MelodyView melody={melody} onPlayNote={(freq) => playNote(freq, 1.2)} />
+        ) : null}
+      </div>
 
       {melody.length > 0 && (
         <div className={styles.toolbar}>
           <span className={styles.melodyName}>{melodyName || 'Melody'}</span>
           <div className={styles.actions}>
-            <button onClick={() => playMelody(melody.map(n => n.frequency), 0.8, 0.2)} className={styles.playAllButton}>
+            <button onClick={() => playMelody(flatMelody.map(n => n.frequency), 0.8, 0.2)} className={styles.playAllButton}>
               ▶ Play All
             </button>
-            {user && <SaveMelodyButton user={user} notes={melody.map(n => n.note)} />}
-            <button onClick={handleBackToInput} className={styles.backButton}>
-              ← New Melody
-            </button>
+            {user && <SaveMelodyButton user={user} notes={flatMelody.map(n => n.note)} />}
           </div>
         </div>
       )}
+
+      <div className={styles.inputBar}>
+        <NoteInput onSubmit={handleNotesSubmit} recorderType="germanG" compact={melody.length > 0} />
+      </div>
 
       {showLibrary && user && (
         <LibraryView
