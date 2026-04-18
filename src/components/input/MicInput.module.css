@@ -1,0 +1,96 @@
+.container {
+  padding: 10px 16px;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.recordButton {
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.recordButton:hover {
+  background: #c0392b;
+}
+
+.stopButton {
+  padding: 10px 18px;
+  font-size: 0.95rem;
+  background: #555;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.submitButton {
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  background: #4a90d9;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.submitButton:hover {
+  background: #357abd;
+}
+
+.clearButton {
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  background: transparent;
+  color: #888;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.clearButton:hover {
+  background: #f5f5f5;
+}
+
+.noteDisplay {
+  min-height: 24px;
+}
+
+.notes {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+  letter-spacing: 0.05em;
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: #aaa;
+}
+
+.liveNote {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e74c3c;
+  margin-left: 4px;
+}

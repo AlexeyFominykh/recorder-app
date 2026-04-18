@@ -1,4 +1,5 @@
 import { getAvailableNotes } from '../../data/fingerings';
+import { useMicDetection } from '../../hooks/useMicDetection';
 import styles from './NoteInput.module.css';
 
 interface NoteInputProps {
@@ -60,8 +61,20 @@ export function parseInput(input: string, availableNotes: string[]): { rows: str
   return { rows, name };
 }
 
+export function toDisplayNote(note: string): string {
+  const match = note.match(/^([A-G]#?)(\d)$/);
+  if (!match) return note;
+  const [, pitch, octave] = match;
+  return octave === '6' ? pitch + '+' : pitch;
+}
+
 export default function NoteInput({ value, onChange, onSubmit, recorderType, compact = false }: NoteInputProps) {
   const availableNotes = getAvailableNotes(recorderType);
+
+  const { isListening, liveNote, start, stop } = useMicDetection(recorderType, (notes) => {
+    const text = (value ? value + ' ' : '') + notes.map(toDisplayNote).join(' ');
+    onChange(text);
+  });
 
   const submit = () => {
     const { rows, name } = parseInput(value, availableNotes);
@@ -92,6 +105,12 @@ export default function NoteInput({ value, onChange, onSubmit, recorderType, com
           className={styles.input}
           rows={compact ? 2 : 3}
         />
+        <button
+          type="button"
+          onClick={isListening ? stop : start}
+          className={isListening ? styles.micButtonActive : styles.micButton}
+          title={isListening ? (liveNote ?? 'listening…') : 'Record from mic'}
+        >🎤</button>
         <button type="submit" className={styles.button}>
           {compact ? 'Update' : 'Show Fingerings'}
         </button>

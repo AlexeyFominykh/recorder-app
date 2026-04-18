@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
-import NoteInput, { parseInput } from './components/input/NoteTextInput';
+import NoteInput, { parseInput, toDisplayNote } from './components/input/NoteTextInput';
 import MelodyView from './components/MelodyView';
 import GoogleSignIn from './components/Auth/GoogleSignIn';
 import LibraryView from './components/Library/LibraryView';
 import SaveMelodyButton from './components/Library/SaveMelodyButton';
 import { getNoteData, getAvailableNotes } from './data/fingerings';
+import { transposeNotes, findBestTransposition } from './utils/transpose';
 import { useAudio } from './hooks/useAudio';
 import type { Fingering } from './types';
 import type { User } from 'firebase/auth';
@@ -16,6 +17,17 @@ interface NoteWithFingering {
   frequency: number;
 }
 
+function buildMelody(rows: string[][]): NoteWithFingering[][] {
+  return rows
+    .map(row =>
+      row.flatMap(note => {
+        const data = getNoteData('germanG', note);
+        return data ? [{ note, fingering: data.fingering, frequency: data.frequency }] : [];
+      })
+    )
+    .filter(r => r.length > 0);
+}
+
 function App() {
   const [melody, setMelody] = useState<NoteWithFingering[][]>([]);
   const [melodyName, setMelodyName] = useState('');
@@ -25,16 +37,7 @@ function App() {
   const { playNote, playMelody, stopMelody, isPlaying } = useAudio();
 
   const handleNotesSubmit = useCallback((rows: string[][], name: string) => {
-    const melodyRows: NoteWithFingering[][] = [];
-    for (const row of rows) {
-      const rowNotes: NoteWithFingering[] = [];
-      for (const note of row) {
-        const data = getNoteData('germanG', note);
-        if (data) rowNotes.push({ note, fingering: data.fingering, frequency: data.frequency });
-      }
-      if (rowNotes.length > 0) melodyRows.push(rowNotes);
-    }
-    setMelody(melodyRows);
+    setMelody(buildMelody(rows));
     setMelodyName(name);
   }, []);
 
@@ -46,7 +49,27 @@ function App() {
     setShowLibrary(false);
   }, [handleNotesSubmit]);
 
+  const handleTranspose = useCallback((semitones: number) => {
+    const flatNotes = melody.flat().map(n => n.note);
+    const transposed = transposeNotes(flatNotes, semitones, 'germanG');
+    if (!transposed) return;
+    setMelody(buildMelody([transposed]));
+    const display = transposed.map(toDisplayNote).join(' ');
+    setInputText(melodyName ? `${melodyName}\n${display}` : display);
+  }, [melody, melodyName]);
+
+  const handleAutoTranspose = useCallback(() => {
+    const flatNotes = melody.flat().map(n => n.note);
+    const shift = findBestTransposition(flatNotes, 'germanG');
+    if (shift !== 0) handleTranspose(shift);
+  }, [melody, handleTranspose]);
+
   const flatMelody = melody.flat();
+
+  const canTransposeDown = flatMelody.length > 0 &&
+    transposeNotes(flatMelody.map(n => n.note), -1, 'germanG') !== null;
+  const canTransposeUp = flatMelody.length > 0 &&
+    transposeNotes(flatMelody.map(n => n.note), 1, 'germanG') !== null;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -98,6 +121,26 @@ function App() {
                 defaultName={melodyName}
               />
             )}
+          </div>
+          <div className={styles.transposeControls}>
+            <span className={styles.transposeLabel}>Тональность:</span>
+            <button
+              onClick={() => handleTranspose(-1)}
+              disabled={!canTransposeDown}
+              className={styles.transposeButton}
+              title="−1 полутон"
+            >−1</button>
+            <button
+              onClick={handleAutoTranspose}
+              className={styles.transposeButton}
+              title="Подобрать автоматически"
+            >Auto</button>
+            <button
+              onClick={() => handleTranspose(1)}
+              disabled={!canTransposeUp}
+              className={styles.transposeButton}
+              title="+1 полутон"
+            >+1</button>
           </div>
         </div>
       )}

@@ -66,3 +66,33 @@
   color: #aaa;
   margin-top: 4px;
 }
+
+.micButton {
+  padding: 10px 12px;
+  font-size: 1rem;
+  background: transparent;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.micButton:hover {
+  border-color: #e74c3c;
+}
+
+.micButtonActive {
+  padding: 10px 12px;
+  font-size: 1rem;
+  background: #fdecea;
+  border: 2px solid #e74c3c;
+  border-radius: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
