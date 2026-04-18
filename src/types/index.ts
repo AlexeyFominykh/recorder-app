@@ -17,8 +17,10 @@ export interface Melody {
   id: string;
   name: string;
   notes: string[];
+  inputText?: string;
   createdAt: Date;
   updatedAt: Date;
+  lastOpenedAt?: Date;
 }
 
 export type RecorderType = 'germanG' | 'baroqueC' | 'altoF' | 'tenorC';

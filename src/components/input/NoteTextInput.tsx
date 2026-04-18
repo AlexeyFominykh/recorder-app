@@ -1,16 +1,17 @@
-import { useState } from 'react';
 import { getAvailableNotes } from '../../data/fingerings';
 import styles from './NoteInput.module.css';
 
 interface NoteInputProps {
-  onSubmit: (rows: string[][]) => void;
+  value: string;
+  onChange: (v: string) => void;
+  onSubmit: (rows: string[][], name: string) => void;
   recorderType: string;
   compact?: boolean;
 }
 
-function parseInputToRows(input: string, availableNotes: string[]): string[][] {
+export function parseInput(input: string, availableNotes: string[]): { rows: string[][], name: string } {
   const parseToken = (text: string): string[] => {
-    const cleaned = text.replace(/[,']+/g, '');
+    const cleaned = text.replace(/[,']+/g, '').replace(/[Hh]/g, 'B');
     const regex = /([A-Ga-g])(#?)(\+?)(\d?)/g;
     const notes: string[] = [];
     let match;
@@ -26,36 +27,45 @@ function parseInputToRows(input: string, availableNotes: string[]): string[][] {
     return notes;
   };
 
-  const rows: string[][] = [];
-
-  for (const line of input.split('\n')) {
+  const parseLineToRows = (line: string): string[][] => {
     const trimmed = line.trim();
-    if (!trimmed) continue;
-
+    if (!trimmed) return [];
     const tokens = trimmed.split(/\s+/).filter(Boolean);
     const tokenNotes = tokens.map(parseToken);
     const hasMultiNoteToken = tokenNotes.some(n => n.length > 1);
-
     if (hasMultiNoteToken) {
-      for (const notes of tokenNotes) {
-        if (notes.length > 0) rows.push(notes);
-      }
-    } else {
-      const allNotes = tokenNotes.flat();
-      if (allNotes.length > 0) rows.push(allNotes);
+      return tokenNotes.filter(n => n.length > 0);
+    }
+    const allNotes = tokenNotes.flat();
+    return allNotes.length > 0 ? [allNotes] : [];
+  };
+
+  const lines = input.split('\n');
+  let name = '';
+  let startIndex = 0;
+
+  if (lines.length > 0) {
+    const firstTrimmed = lines[0].trim();
+    if (firstTrimmed && parseToken(firstTrimmed).length === 0) {
+      name = firstTrimmed;
+      startIndex = 1;
     }
   }
 
-  return rows;
+  const rows: string[][] = [];
+  for (let i = startIndex; i < lines.length; i++) {
+    rows.push(...parseLineToRows(lines[i]));
+  }
+
+  return { rows, name };
 }
 
-export default function NoteInput({ onSubmit, recorderType, compact = false }: NoteInputProps) {
-  const [input, setInput] = useState('');
+export default function NoteInput({ value, onChange, onSubmit, recorderType, compact = false }: NoteInputProps) {
   const availableNotes = getAvailableNotes(recorderType);
 
   const submit = () => {
-    const rows = parseInputToRows(input, availableNotes);
-    if (rows.length > 0) onSubmit(rows);
+    const { rows, name } = parseInput(value, availableNotes);
+    if (rows.length > 0) onSubmit(rows, name);
   };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -75,10 +85,10 @@ export default function NoteInput({ onSubmit, recorderType, compact = false }: N
       {!compact && <h2>Enter Melody</h2>}
       <div className={styles.inputGroup}>
         <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={compact ? 'Edit notes…' : 'e.g., GABCDE or GAB CDE or G A B\nUse new lines or spaces between groups'}
+          placeholder={compact ? 'Edit notes…' : 'Song name (optional)\nGABCDE or GAB CDE or G A B'}
           className={styles.input}
           rows={compact ? 2 : 3}
         />

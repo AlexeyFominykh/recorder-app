@@ -1,10 +1,10 @@
 import { useState, useCallback, useEffect } from 'react';
-import NoteInput from './components/input/NoteTextInput';
+import NoteInput, { parseInput } from './components/input/NoteTextInput';
 import MelodyView from './components/MelodyView';
 import GoogleSignIn from './components/Auth/GoogleSignIn';
 import LibraryView from './components/Library/LibraryView';
 import SaveMelodyButton from './components/Library/SaveMelodyButton';
-import { getNoteData } from './data/fingerings';
+import { getNoteData, getAvailableNotes } from './data/fingerings';
 import { useAudio } from './hooks/useAudio';
 import type { Fingering } from './types';
 import type { User } from 'firebase/auth';
@@ -19,11 +19,12 @@ interface NoteWithFingering {
 function App() {
   const [melody, setMelody] = useState<NoteWithFingering[][]>([]);
   const [melodyName, setMelodyName] = useState('');
+  const [inputText, setInputText] = useState('');
   const [user, setUser] = useState<User | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
-  const { playNote, playMelody } = useAudio();
+  const { playNote, playMelody, stopMelody, isPlaying } = useAudio();
 
-  const handleNotesSubmit = useCallback((rows: string[][]) => {
+  const handleNotesSubmit = useCallback((rows: string[][], name: string) => {
     const melodyRows: NoteWithFingering[][] = [];
     for (const row of rows) {
       const rowNotes: NoteWithFingering[] = [];
@@ -34,12 +35,14 @@ function App() {
       if (rowNotes.length > 0) melodyRows.push(rowNotes);
     }
     setMelody(melodyRows);
-    setMelodyName(rows.flat().join(' '));
+    setMelodyName(name);
   }, []);
 
-  const handleSelectMelody = useCallback((notes: string[], name: string) => {
-    handleNotesSubmit([notes]);
-    setMelodyName(name);
+  const handleSelectMelody = useCallback((notes: string[], name: string, savedInputText: string) => {
+    const text = savedInputText || (name ? `${name}\n${notes.join(' ')}` : notes.join(' '));
+    setInputText(text);
+    const { rows, name: parsedName } = parseInput(text, getAvailableNotes('germanG'));
+    handleNotesSubmit(rows.length > 0 ? rows : [notes], parsedName || name);
     setShowLibrary(false);
   }, [handleNotesSubmit]);
 
@@ -48,7 +51,8 @@ function App() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (flatMelody.length === 0) return;
-      if (e.key === ' ') {
+      const tag = (e.target as HTMLElement).tagName;
+      if (e.key === ' ' && tag !== 'INPUT' && tag !== 'TEXTAREA') {
         e.preventDefault();
         playNote(flatMelody[0].frequency, 1.2);
       }
@@ -79,18 +83,33 @@ function App() {
 
       {melody.length > 0 && (
         <div className={styles.toolbar}>
-          <span className={styles.melodyName}>{melodyName || 'Melody'}</span>
           <div className={styles.actions}>
-            <button onClick={() => playMelody(flatMelody.map(n => n.frequency), 0.8, 0.2)} className={styles.playAllButton}>
-              ▶ Play All
+            <button
+              onClick={() => isPlaying ? stopMelody() : playMelody(flatMelody.map(n => n.frequency), 0.8, 0.2)}
+              className={styles.playAllButton}
+            >
+              {isPlaying ? '■ Stop' : '▶ Play All'}
             </button>
-            {user && <SaveMelodyButton user={user} notes={flatMelody.map(n => n.note)} />}
+            {user && (
+              <SaveMelodyButton
+                user={user}
+                notes={flatMelody.map(n => n.note)}
+                inputText={inputText}
+                defaultName={melodyName}
+              />
+            )}
           </div>
         </div>
       )}
 
       <div className={styles.inputBar}>
-        <NoteInput onSubmit={handleNotesSubmit} recorderType="germanG" compact={melody.length > 0} />
+        <NoteInput
+          value={inputText}
+          onChange={setInputText}
+          onSubmit={handleNotesSubmit}
+          recorderType="germanG"
+          compact={melody.length > 0}
+        />
       </div>
 
       {showLibrary && user && (

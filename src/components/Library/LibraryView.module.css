@@ -1,57 +1,73 @@
 .overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 200;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
+  justify-content: flex-end;
 }
 
-.container {
+.drawer {
   background: #fff;
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 500px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-  color: #333;
+  width: 300px;
+  max-width: 85vw;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+  animation: slideIn 0.22s ease;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+  flex-shrink: 0;
 }
 
 .header h2 {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
 }
 
 .closeButton {
   width: 32px;
   height: 32px;
-  font-size: 1.2rem;
-  background: #eee;
+  font-size: 1rem;
+  background: #f0f0f0;
   border: none;
   border-radius: 50%;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #555;
 }
 
 .closeButton:hover {
-  background: #ddd;
+  background: #e0e0e0;
+}
+
+.content {
+  flex: 1;
+  overflow-y: auto;
 }
 
 .empty {
   text-align: center;
-  color: #777;
-  padding: 40px 0;
+  color: #999;
+  padding: 48px 20px;
+  font-size: 0.9rem;
+  margin: 0;
 }
 
 .list {
@@ -62,40 +78,49 @@
 
 .item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 12px 0;
-  border-bottom: 1px solid #eee;
+  padding: 0 8px 0 20px;
+  border-bottom: 1px solid #f0f0f0;
+  min-height: 52px;
+  cursor: pointer;
 }
 
 .item:last-child {
   border-bottom: none;
 }
 
-.itemInfo {
-  flex: 1;
-  cursor: pointer;
+.item:hover {
+  background: #f8f8f8;
 }
 
 .itemName {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 4px;
+  flex: 1;
+  font-size: 0.95rem;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 14px 0;
 }
 
-.itemNotes {
-  font-size: 0.85rem;
-  color: #777;
+.item:hover .itemName {
+  color: #4a90d9;
 }
 
 .deleteButton {
+  flex-shrink: 0;
   background: none;
   border: none;
-  font-size: 1.2rem;
+  font-size: 0.85rem;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 8px;
+  color: #ccc;
+  border-radius: 4px;
+  line-height: 1;
+  transition: color 0.15s;
 }
 
 .deleteButton:hover {
-  opacity: 0.7;
+  color: #e74c3c;
+  background: #ffeaea;
 }

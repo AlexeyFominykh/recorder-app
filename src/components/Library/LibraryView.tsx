@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import type { User } from 'firebase/auth';
-import { loadMelodies, deleteMelody, type MelodyDoc } from '../../services/melodyService';
+import { loadMelodies, deleteMelody, updateLastOpened, type MelodyDoc } from '../../services/melodyService';
 import styles from './LibraryView.module.css';
 
 interface LibraryViewProps {
   user: User;
-  onSelectMelody: (notes: string[], name: string) => void;
+  onSelectMelody: (notes: string[], name: string, inputText: string) => void;
   onClose: () => void;
 }
 
@@ -24,38 +24,47 @@ export default function LibraryView({ user, onSelectMelody, onClose }: LibraryVi
     fetchMelodies();
   }, [fetchMelodies]);
 
-  const handleDelete = async (id: string) => {
+  const handleSelect = async (m: MelodyDoc) => {
+    await updateLastOpened(user.uid, m.id);
+    onSelectMelody(m.notes, m.name, m.inputText ?? '');
+  };
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     await deleteMelody(user.uid, id);
-    fetchMelodies();
+    setMelodies(prev => prev.filter(m => m.id !== id));
   };
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.container}>
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.drawer} onClick={e => e.stopPropagation()}>
         <div className={styles.header}>
           <h2>My Library</h2>
           <button onClick={onClose} className={styles.closeButton}>✕</button>
         </div>
 
-        {loading ? (
-          <p>Loading...</p>
-        ) : melodies.length === 0 ? (
-          <p className={styles.empty}>No saved melodies yet.</p>
-        ) : (
-          <ul className={styles.list}>
-            {melodies.map(m => (
-              <li key={m.id} className={styles.item}>
-                <div className={styles.itemInfo} onClick={() => onSelectMelody(m.notes, m.name)}>
+        <div className={styles.content}>
+          {loading ? (
+            <p className={styles.empty}>Loading...</p>
+          ) : melodies.length === 0 ? (
+            <p className={styles.empty}>No saved melodies yet.</p>
+          ) : (
+            <ul className={styles.list}>
+              {melodies.map(m => (
+                <li key={m.id} className={styles.item} onClick={() => handleSelect(m)}>
                   <span className={styles.itemName}>{m.name}</span>
-                  <span className={styles.itemNotes}>{m.notes.join(' · ')}</span>
-                </div>
-                <button onClick={() => handleDelete(m.id)} className={styles.deleteButton}>
-                  🗑
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+                  <button
+                    onClick={(e) => handleDelete(m.id, e)}
+                    className={styles.deleteButton}
+                    title="Delete"
+                  >
+                    ✕
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );

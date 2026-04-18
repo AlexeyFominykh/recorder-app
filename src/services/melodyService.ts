@@ -6,6 +6,7 @@ import {
   getDocs,
   deleteDoc,
   doc,
+  updateDoc,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
@@ -20,19 +21,21 @@ export interface MelodyDoc extends Melody {
 export async function saveMelody(
   userId: string,
   name: string,
-  notes: string[]
+  notes: string[],
+  inputText?: string,
 ): Promise<string | null> {
   try {
     const docRef = await addDoc(collection(db, 'users', userId, MELodies_COLLECTION), {
       name,
       notes,
+      inputText: inputText ?? '',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
     return docRef.id;
   } catch (error) {
     console.error('Error saving melody:', error);
-    return null;
+    throw error;
   }
 }
 
@@ -43,15 +46,32 @@ export async function loadMelodies(userId: string): Promise<MelodyDoc[]> {
       orderBy('createdAt', 'desc')
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate() ?? new Date(),
-      updatedAt: doc.data().updatedAt?.toDate() ?? new Date(),
+    const docs = snapshot.docs.map(d => ({
+      id: d.id,
+      ...d.data(),
+      createdAt: d.data().createdAt?.toDate() ?? new Date(),
+      updatedAt: d.data().updatedAt?.toDate() ?? new Date(),
+      lastOpenedAt: d.data().lastOpenedAt?.toDate() ?? undefined,
+      inputText: d.data().inputText ?? undefined,
     })) as MelodyDoc[];
+    return docs.sort((a, b) => {
+      const aTime = (a.lastOpenedAt ?? a.createdAt).getTime();
+      const bTime = (b.lastOpenedAt ?? b.createdAt).getTime();
+      return bTime - aTime;
+    });
   } catch (error) {
     console.error('Error loading melodies:', error);
     return [];
+  }
+}
+
+export async function updateLastOpened(userId: string, melodyId: string): Promise<void> {
+  try {
+    await updateDoc(doc(db, 'users', userId, MELodies_COLLECTION, melodyId), {
+      lastOpenedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Error updating lastOpenedAt:', error);
   }
 }
 
